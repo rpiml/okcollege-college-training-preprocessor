@@ -63,7 +63,7 @@ columns = []
 with open(col_file) as f:
 	for item in f:
 		columns = item.split(',')
-df = pd.read_csv(csv_file, sep='|', header=None)
+df = pd.read_csv(csv_file, sep='\t', header=None)
 df.columns = columns
 #print df['SAT/ACT 25th-75th percentile']
 df['SAT1'] = df['SAT/ACT 25th-75th percentile'].apply(SAT1)
@@ -74,7 +74,7 @@ df['Student-faculty ratio'] = df['Student-faculty ratio'].apply(ratio)
 df.drop('SAT/ACT 25th-75th percentile', axis=1, inplace=True)
 df = df.sort_index(axis=1)
 columns.sort()
-df.to_csv('out.csv', sep='|', index=False)
+df.to_csv('out.csv', sep='\t', index=False)
 
 columnString = ""
 collegeString = ""
@@ -85,7 +85,7 @@ with open('out.csv') as csvfile:
 #print collegeString
 
 for i in columns:
-	columnString += i + "|numerical\n"
+	columnString += i + "\tnumerical\n"
 #print columnString
 
 r = redis.StrictRedis(host=os.environ['PG_HOST'])
