@@ -74,12 +74,13 @@ df['Student-faculty ratio'] = df['Student-faculty ratio'].apply(ratio)
 df.drop('SAT/ACT 25th-75th percentile', axis=1, inplace=True)
 df = df.sort_index(axis=1)
 columns.sort()
-df.to_csv('out.csv', sep='\t', index=False)
+df.to_csv('assets/out.csv', sep='\t', index=False)
 
 columnString = ""
 collegeString = ""
-with open('out.csv') as csvfile:
+with open('assets/out.csv') as csvfile:
 	reader = csv.reader(csvfile)
+	next(reader, None)
 	for row in reader:
 		collegeString += row[0] + "\n"
 #print collegeString
@@ -91,4 +92,7 @@ for i in columns:
 r = redis.StrictRedis(host=os.environ['PG_HOST'])
 r.set('learning:college_training.csv', collegeString)
 r.set('learning:college_features.csv', columnString)
+
+#os.remove('assets/out.csv')
+
 #print df2
