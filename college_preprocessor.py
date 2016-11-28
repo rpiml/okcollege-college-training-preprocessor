@@ -15,7 +15,7 @@ def SAT1(score):
 			begin = score.split('-')[0]
 		if int(begin) > 100:
 			return begin
-	
+
 	return 'None'
 
 def SAT2(score):
@@ -29,7 +29,7 @@ def SAT2(score):
 			end = score.split('-')[1]
 		if int(end) > 100:
 			return end
-	
+
 	return 'None'
 
 def ACT1(score):
@@ -96,20 +96,13 @@ def parsecolleges(college_file, columns):
 	df['Student-faculty ratio'] = df['Student-faculty ratio'].apply(ratio)
 	df.drop('SAT/ACT 25th-75th percentile', axis=1, inplace=True)
 	df = df.sort_index(axis=1)
-	df.to_csv('assets/out.csv', sep='\t', index=False)
+	df.to_csv('./learning_colleges.csv', sep='\t', index=False)
 
 def getcollegestring():
 	'''
 	Converts the colleges csv file into a string for redis
 	'''
-	college_string = ""
-	with open('assets/out.csv') as csvfile:
-		reader = csv.reader(csvfile)
-		next(reader, None)
-		for row in reader:
-			college_string += row[0] + "\n"
-
-	return college_string
+	return open('./learning_colleges.csv').read()
 
 def getfeaturestring(columns):
 	'''
@@ -135,8 +128,8 @@ def main():
 	Preprocesses the colleges data and ultimately adds it into redis
 	'''
 	college_file = 'assets/colleges.csv'
-	cols_file = 'assets/Column Labels.txt'
-	
+	cols_file = 'assets/column_labels.csv'
+
 	columns = parselabels(cols_file)
 	parsecolleges(college_file, columns)
 	college_string = getcollegestring()
