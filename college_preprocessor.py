@@ -119,7 +119,7 @@ def setredis(column_string, college_string):
 	'''
 	Adds the colleges & features string into the redis db
 	'''
-	r = redis.StrictRedis(host=os.environ['PG_HOST'])
+	r = redis.StrictRedis(host=(os.environ['REDIS_HOST'] or "localhost"))
 	r.set('learning:college_training.csv', college_string)
 	r.set('learning:college_features.csv', column_string)
 
