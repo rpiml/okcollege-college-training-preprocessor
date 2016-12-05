@@ -3,6 +3,7 @@ import pandas as pd
 import io, csv, os
 import redis
 import pika
+import helpers
 
 def SAT1(score):
 	'''
@@ -102,7 +103,9 @@ def getcollegestring():
 	'''
 	Converts the colleges csv file into a string for redis
 	'''
-	return open('./learning_colleges.csv').read()
+	with open('./learning_colleges.csv') as f:
+		contents = f.read()
+	return contents
 
 def getfeaturestring(columns):
 	'''
@@ -123,20 +126,57 @@ def setredis(column_string, college_string):
 	r.set('learning:college_training.csv', college_string)
 	r.set('learning:college_features.csv', column_string)
 
+
+def rabbitmq_callback(ch, method, properties, body):
+    print('Message received: %s' % body.decode('utf-8'))
+    try:
+		college_file = 'assets/colleges.csv'
+		cols_file = 'assets/column_labels.csv'
+
+		columns = parselabels(cols_file)
+		parsecolleges(college_file, columns)
+		college_string = getcollegestring()
+		column_string = getfeaturestring(columns)
+		setredis(column_string, college_string)
+
+    except Exception as e:
+        print(e)
+        return
+    print('Message processed: %s' % body.decode('utf-8'))
+
 def main():
 	'''
 	Preprocesses the colleges data and ultimately adds it into redis
 	'''
-	college_file = 'assets/colleges.csv'
-	cols_file = 'assets/column_labels.csv'
 
-	columns = parselabels(cols_file)
-	parsecolleges(college_file, columns)
-	college_string = getcollegestring()
-	column_string = getfeaturestring(columns)
-	setredis(column_string, college_string)
+	conn = helpers.rabbitmq_connect()
+	channel = conn.channel()
+
+	channel.queue_declare(queue='college-training-preprocessor')
+	channel.exchange_declare('preprocessor')
 
 
+	channel.queue_bind(
+		exchange='preprocessor',
+        queue='college-training-preprocessor'
+	)
+
+	channel.basic_publish(
+		exchange='preprocessor',
+		routing_key='college-training-preprocessor',
+		body='set-colleges-to-redis'
+	)
+
+	channel.basic_consume(
+		rabbitmq_callback,
+		queue='college-training-preprocessor',
+		no_ack=True
+	)
+
+	helpers.wait_for_redis()
+
+	print('Consuming...')
+	channel.start_consuming()
 
 if __name__ == '__main__':
 	main()
