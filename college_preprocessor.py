@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import io, csv, os
+import StringIO
 import redis
 import pika
 import helpers
@@ -97,15 +98,12 @@ def parsecolleges(college_file, columns):
 	df['Student-faculty ratio'] = df['Student-faculty ratio'].apply(ratio)
 	df.drop('SAT/ACT 25th-75th percentile', axis=1, inplace=True)
 	df = df.sort_index(axis=1)
-	df.to_csv('./learning_colleges.csv', sep='\t', index=False)
 
-def getcollegestring():
-	'''
-	Converts the colleges csv file into a string for redis
-	'''
-	with open('./learning_colleges.csv') as f:
-		contents = f.read()
-	return contents
+	csv_file_obj = StringIO.StringIO()
+
+	df.to_csv(csv_file_obj, sep='\t', index=False)
+
+	return csv_file_obj
 
 def getfeaturestring(columns):
 	'''
@@ -134,13 +132,13 @@ def rabbitmq_callback(ch, method, properties, body):
 		cols_file = 'assets/column_labels.csv'
 
 		columns = parselabels(cols_file)
-		parsecolleges(college_file, columns)
-		college_string = getcollegestring()
+		csv_file_obj = parsecolleges(college_file, columns)
+		college_string = csv_file_obj.read()
 		column_string = getfeaturestring(columns)
 		setredis(column_string, college_string)
 
     except Exception as e:
-        print(e)
+		print e
         return
     print('Message processed: %s' % body.decode('utf-8'))
 
