@@ -147,10 +147,10 @@ def main():
     '''
     Preprocesses the colleges data and ultimately adds it into redis
     '''
-	
-	# Must wait for redis before connecting to RabbitMQ or else the RabbitMQ
-	# heartbeats will time out!
-	helpers.wait_for_redis()
+
+    # Must wait for redis before connecting to RabbitMQ or else the RabbitMQ
+    # heartbeats will time out!
+    helpers.wait_for_redis()
 
     conn = helpers.rabbitmq_connect()
     channel = conn.channel()
