@@ -103,6 +103,7 @@ def parsecolleges(college_file, columns):
 
     df.to_csv(csv_file_obj, sep='\t', index=False)
 
+    csv_file_obj.seek(0)
     return csv_file_obj
 
 def getfeaturestring(columns):
@@ -155,11 +156,8 @@ def main():
     conn = helpers.rabbitmq_connect()
     channel = conn.channel()
 
+    channel.exchange_declare(exchange='preprocessor', exchange_type='direct', auto_delete=True)
     channel.queue_declare(queue='college-training-preprocessor')
-    try:
-        channel.exchange_declare('preprocessor')
-    except pika.exceptions.ChannelClosed as e:
-        print e
 
     channel.queue_bind(
         exchange='preprocessor',
