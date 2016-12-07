@@ -147,13 +147,19 @@ def main():
     '''
     Preprocesses the colleges data and ultimately adds it into redis
     '''
+	
+	# Must wait for redis before connecting to RabbitMQ or else the RabbitMQ
+	# heartbeats will time out!
+	helpers.wait_for_redis()
 
     conn = helpers.rabbitmq_connect()
     channel = conn.channel()
 
     channel.queue_declare(queue='college-training-preprocessor')
-    channel.exchange_declare('preprocessor')
-
+    try:
+        channel.exchange_declare('preprocessor')
+    except pika.exceptions.ChannelClosed as e:
+        print e
 
     channel.queue_bind(
         exchange='preprocessor',
@@ -172,7 +178,6 @@ def main():
         no_ack=True
     )
 
-    helpers.wait_for_redis()
 
     print('Consuming...')
     channel.start_consuming()

@@ -11,17 +11,17 @@ def wait_for_redis(host=None):
     if host is None:
         host = (os.getenv('REDIS_HOST') or 'localhost')
 
-    print 'Confirming redis service is running...' 
+    print('Confirming redis service is running...')
     r = redis.StrictRedis(host=(os.getenv('REDIS_HOST') or 'localhost'))
     while True:
         try:
             r.ping()
             break
         except (redis.exceptions.ConnectionError, redis.exceptions.BusyLoadingError):
-            print 'Could not connect to redis. Retrying...'
+            print('Could not connect to redis. Retrying...')
             time.sleep(1)
 
-    print 'Redis service confirmed running.'
+    print('Redis service confirmed running.')
 
 def rabbitmq_connect(user='rabbitmq', password='rabbitmq', host=None):
     '''
@@ -34,7 +34,7 @@ def rabbitmq_connect(user='rabbitmq', password='rabbitmq', host=None):
         host=host,
         credentials=credentials
     )
-    print 'Attempting RabbitMQ connection...'
+    print('Attempting RabbitMQ connection...')
     while True:
         try:
             connection = pika.BlockingConnection(parameters)
@@ -43,5 +43,5 @@ def rabbitmq_connect(user='rabbitmq', password='rabbitmq', host=None):
             print('Could not connect to RabbitMQ. Retrying...')
             time.sleep(1)
 
-    print 'RabbitMQ connection established'
+    print('RabbitMQ connection established')
     return connection
