@@ -1,3 +1,12 @@
+'''
+Preprocesses college data used for training. Takes as input
+the colleges data file, and the college labels file. The data
+is formatted as specified by the column_labels.csv, and placed
+into the redis filesystem. The column labels and specifications
+are placed into redis as well.
+
+'''
+
 import numpy as np
 import pandas as pd
 import io, csv, os
@@ -103,6 +112,7 @@ def separate_parens(value):
 def category_yn(value):
 	'''
 	Cells with yes/no values are changed to 1/0
+    N/A = -1
 	yes = 1
 	no = 0
 	'''
@@ -111,7 +121,7 @@ def category_yn(value):
 			return 1
 		if value == 'No':
 			return 0
-	return value
+	return -1
 
 def category_enlist(value):
 	'''
@@ -144,11 +154,12 @@ def category_tests(value):
 			return 2
 		if value == 'Either SAT or ACT':
 			return 3
-	return 0
+	return -1
 
 def category_selectivity(value):
 	'''
 	Category parsing for selectivity
+    N/A = -1
 	Least selective = 0
 	Less selective = 1
 	Selective = 2
@@ -166,7 +177,7 @@ def category_selectivity(value):
 			return 3
 		if value == 'Most selective':
 			return 4
-	return 0
+	return -1
 
 def parselabels(cols_file):
     '''
@@ -206,17 +217,17 @@ def parsecolleges(college_file, columns):
     df = df.applymap(strip_chars)
 
     # split the SAT/ACT range into two cells with lower/upper values
-    df['SAT-lower-percentile'] = df['SAT/ACT 25th-75th percentile'].apply(SAT_begin)
-    df['SAT-upper-percentile'] = df['SAT/ACT 25th-75th percentile'].apply(SAT_end)
-    df['ACT-lower-percentile'] = df['SAT/ACT 25th-75th percentile'].apply(ACT_begin)
-    df['ACT-upper-percentile'] = df['SAT/ACT 25th-75th percentile'].apply(ACT_end)
-    df['Student-faculty-ratio'] = df['Student-faculty ratio'].apply(ratio)
+    df['SAT-lower-percentile'] = df['SAT/ACT-25th-75th-percentile'].apply(SAT_begin)
+    df['SAT-upper-percentile'] = df['SAT/ACT-25th-75th-percentile'].apply(SAT_end)
+    df['ACT-lower-percentile'] = df['SAT/ACT-25th-75th-percentile'].apply(ACT_begin)
+    df['ACT-upper-percentile'] = df['SAT/ACT-25th-75th-percentile'].apply(ACT_end)
+    df['Student-faculty-ratio'] = df['Student-faculty-ratio'].apply(ratio)
     df['Air-Force-ROTC'] = df['Air-Force-ROTC'].apply(category_enlist)
     df['Army-ROTC'] = df['Army-ROTC'].apply(category_enlist)
-    df['Navy-ROTC'] = df['Nacy-ROTC'].apply(category_enlist)
+    df['Navy-ROTC'] = df['Navy-ROTC'].apply(category_enlist)
     df['Required-standardized-tests'] = df['Required-standardized-tests'].apply(category_tests)
     df['Selectivity'] = df['Selectivity'].apply(category_selectivity)
-    df.drop('SAT/ACT 25th-75th percentile', axis=1, inplace=True)
+    df.drop('SAT/ACT-25th-75th-percentile', axis=1, inplace=True)
     df = df.sort_index(axis=1)
 
     csv_file_obj = StringIO.StringIO()
@@ -267,7 +278,7 @@ def rabbitmq_callback(ch, method, properties, body):
         college_file = 'assets/colleges.csv'
         cols_file = 'assets/column_labels.csv'
         columns = parselabels(cols_file)
-        csv_file_obj = parsecolleges(college_file, columns, id_to_name)
+        csv_file_obj = parsecolleges(college_file, columns)
         college_string = csv_file_obj.read()
         column_string = getfeaturestring(cols_file)
         setredis(column_string, college_string)
